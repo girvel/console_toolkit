@@ -1,11 +1,11 @@
 #!winpty python.exe
 
-# TODO partial dates
 # TODO lib
 # TODO `tl -= *`
 
 from datetime import datetime, timedelta
 from datetime import date as tdate
+from flame import flame
 
 from fire import Fire
 from pymongo import MongoClient
@@ -24,7 +24,7 @@ collection.update_by_date = lambda date, update: collection.update_one(
     upsert=True,
 )
 
-def parse_date(date):
+def partial_date(date):
     values = [] if date is None else list(map(int, date.split('-')))[::-1]
     today = tdate.today()
 
@@ -38,6 +38,7 @@ def parse_date(date):
     )
 
 
+@flame
 class Cli:
     """CLI for interaction with timeline DB
 
@@ -48,15 +49,13 @@ class Cli:
     removing plot lines events for a particular day.
     """
 
-    def add(self, *events, date=None):
+    def add(self, *events, date: partial_date=None):
         """Add events for a particular day
 
         Args:
             events: plot lines that manifested themselves during this day
             date: the day; in format [[YYYY]-MM]-DD
         """
-        date = parse_date(date)
-
         collection.update_by_date(date, {
             '$set': {
                 'time': date,
@@ -66,15 +65,13 @@ class Cli:
             }
         })
 
-    def remove(self, *events, date=None):
+    def remove(self, *events, date: partial_date=None):
         """Remove events for a particular day.
 
         Args:
             events: plot lines that should be removed from this day
             date: the day; in format [[YYYY]-MM]-DD
         """
-        date = parse_date(date)
-
         collection.update_by_date(date, {
             '$pull': {
                 'events': {'$in': events}
