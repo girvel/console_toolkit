@@ -1,18 +1,24 @@
 #!winpty python.exe
+
+# TODO class docstring
+# TODO remove date
+# TODO extract common logic
+# TODO partial dates
+
 from datetime import datetime, timedelta
 
 from fire import Fire
 from pymongo import MongoClient
 
 
-class PseudoCli:
-    @staticmethod
-    def concat(*occured_arcs, date=None):
-        """Concatenate arcs occurences to a database
+class Cli:
+    def concat(self, *occured_arcs, date=None):
+        """Concatenate arcs occurences for a particular date and push results
+        to database
 
         Args:
-            occured_arcs: arcs, event from which happened this day
-            date: for which date to append measurments in format YYYY-MM-DD
+            occured_arcs: arcs that occured that day
+            date: for which date to append measurments; in format YYYY-MM-DD
         """
         if date is None:
             date = datetime.now()
@@ -43,7 +49,8 @@ class PseudoCli:
         )
 
 
+setattr(Cli, '..=', Cli.concat)
+
+
 if __name__ == '__main__':
-    Fire({
-        '..=': PseudoCli.concat,
-    })
+    Fire(Cli)
