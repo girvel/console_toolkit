@@ -1,6 +1,5 @@
 #!winpty python.exe
 
-# TODO class docstring
 # TODO partial dates
 # TODO lib
 # TODO `tl -= *`
@@ -26,9 +25,17 @@ collection.update_by_date = lambda date, update: collection.update_one(
 )
 
 def parse_date(date):
-    if date is None:
-        return datetime.combine(tdate.today(), datetime.min.time())
-    return datetime.fromisoformat(date)
+    values = [] if date is None else list(map(int, date.split('-')))[::-1]
+    today = tdate.today()
+
+    return datetime.combine(
+        tdate(
+            len(values) > 2 and values[2] or today.year,
+            len(values) > 1 and values[1] or today.month,
+            len(values) > 0 and values[0] or today.day,
+        ),
+        datetime.min.time()
+    )
 
 
 class Cli:
@@ -46,7 +53,7 @@ class Cli:
 
         Args:
             events: plot lines that manifested themselves during this day
-            date: the day; in format YYYY-MM-DD
+            date: the day; in format [[YYYY]-MM]-DD
         """
         date = parse_date(date)
 
@@ -64,7 +71,7 @@ class Cli:
 
         Args:
             events: plot lines that should be removed from this day
-            date: the day; in format YYYY-MM-DD
+            date: the day; in format [[YYYY]-MM]-DD
         """
         date = parse_date(date)
 
