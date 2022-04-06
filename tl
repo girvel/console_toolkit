@@ -2,6 +2,8 @@
 
 # TODO class docstring
 # TODO partial dates
+# TODO lib
+# TODO `tl -= *`
 
 from datetime import datetime, timedelta
 from datetime import date as tdate
@@ -10,7 +12,7 @@ from fire import Fire
 from pymongo import MongoClient
 
 
-collection = MongoClient("mongodb://localhost")['narrative']['arc_measurments']
+collection = MongoClient("mongodb://localhost")['narrative']['timeline']
 
 collection.update_by_date = lambda date, update: collection.update_one(
     {
@@ -30,13 +32,21 @@ def parse_date(date):
 
 
 class Cli:
-    def add(self, *arcs, date=None):
-        """Concatenate arcs occurences for a particular date and push results
-        to database
+    """CLI for interaction with timeline DB
+
+    Timeline is a representation of the flow of life. Each day is characterised
+    by set of plot lines that manifested themselves during the day as events.
+
+    This script allows to edit information about the timeline, adding or
+    removing plot lines events for a particular day.
+    """
+
+    def add(self, *events, date=None):
+        """Add events for a particular day
 
         Args:
-            arcs: arcs that occured that day
-            date: for which date to append measurments; in format YYYY-MM-DD
+            events: plot lines that manifested themselves during this day
+            date: the day; in format YYYY-MM-DD
         """
         date = parse_date(date)
 
@@ -45,16 +55,22 @@ class Cli:
                 'time': date,
             },
             '$addToSet': {
-                'measurments': {'$each': arcs},
+                'events': {'$each': events},
             }
         })
 
-    def remove(self, *arcs, date=None):
+    def remove(self, *events, date=None):
+        """Remove events for a particular day.
+
+        Args:
+            events: plot lines that should be removed from this day
+            date: the day; in format YYYY-MM-DD
+        """
         date = parse_date(date)
 
         collection.update_by_date(date, {
             '$pull': {
-                'measurments': {'$in': arcs}
+                'events': {'$in': events}
             }
         })
 
