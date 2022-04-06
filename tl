@@ -2,13 +2,15 @@
 
 # TODO class docstring
 # TODO remove date
-# TODO extract common logic
 # TODO partial dates
 
 from datetime import datetime, timedelta
 
 from fire import Fire
 from pymongo import MongoClient
+
+
+collection = MongoClient("mongodb://localhost")['narrative']['arc_measurments']
 
 
 class Cli:
@@ -24,11 +26,6 @@ class Cli:
             date = datetime.now()
         else:
             date = datetime.fromisoformat(date)
-
-
-        collection = MongoClient("mongodb://localhost") \
-            ['narrative']['arc_measurments']
-
 
         collection.update_one(
             {
