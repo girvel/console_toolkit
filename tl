@@ -1,14 +1,16 @@
-#!winpty python.exe
-
-# TODO lib
-# TODO `tl -= *`
+#!python
 
 from datetime import datetime, timedelta
 from datetime import date as tdate
+
+from termcolor import cprint, colored
+
 from flame import flame
 
 from fire import Fire
 from pymongo import MongoClient
+from colorama import init
+init()
 
 
 collection = MongoClient("mongodb://localhost")['narrative']['timeline']
@@ -54,8 +56,9 @@ class Cli:
 
         Args:
             events: plot lines that manifested themselves during this day
-            date: the day; in format [[YYYY]-MM]-DD
+            date: the day
         """
+
         collection.update_by_date(date, {
             '$set': {
                 'time': date,
@@ -70,13 +73,71 @@ class Cli:
 
         Args:
             events: plot lines that should be removed from this day
-            date: the day; in format [[YYYY]-MM]-DD
+            date: the day
         """
-        collection.update_by_date(date, {
-            '$pull': {
+
+        collection.update_by_date(date, events == ("_", )
+            and {'$set': {
+                'events': []
+            }}
+            or {'$pull': {
                 'events': {'$in': events}
-            }
-        })
+            }}
+        )
+
+    def show(self):
+        """Displays current timeline"""
+
+        everything = sorted(list(collection.find({})), key=lambda d: d['time'])
+
+        plotlines = list(set(
+            sum((d['events'] for d in everything), [])
+        ))
+
+        rainbow = 'red yellow green cyan blue magenta'.split()
+        cell_w = 6
+
+        print()
+
+        for d in everything:
+            day = d['time'].day
+
+            print(' ' * (cell_w - 2), end='')
+            if day < 10:
+                print(f'0{day}', end='')
+            else:
+                print(f'{day}', end='')
+        print()
+
+        for i, line in enumerate(plotlines):
+            line_color = rainbow[i % len(rainbow)]
+
+            for i, d in enumerate(everything):
+                colors = (line in d['events']
+                    and ('grey', 'on_' + line_color)
+                    or ('white', 'on_grey'))
+
+                cprint(
+                    ' ' * cell_w,
+                    *colors,
+                    end=''
+                )
+            print()
+
+            i = 0
+            for i, d in enumerate(everything):
+                colors = (line in d['events']
+                    and ('grey', 'on_' + line_color)
+                    or ('white', 'on_grey'))
+
+                for j in range(cell_w):
+                    cprint(
+                        line[cell_w * i + j] if len(line) > cell_w * i + j else ' ',
+                        *colors,
+                        end=''
+                    )
+
+            print(line[cell_w * i + 1:])
 
 
 setattr(Cli, '+=', Cli.add)
